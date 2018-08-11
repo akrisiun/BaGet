@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using BaGet.Core.Services;
 using Microsoft.AspNetCore.Http;
@@ -44,11 +45,20 @@ namespace BaGet.Controllers
                 return;
             }
 
+            Stream uploadStream = null;
+            MemoryStream sourceStream = null;
             try
             {
-                using (var uploadStream = package.OpenReadStream())
+                sourceStream = new MemoryStream();
                 {
-                    var result = await _indexer.IndexAsync(uploadStream);
+                    // await dataSource.LoadIntoStream(sourceStream);
+                    uploadStream = package.OpenReadStream();
+                    uploadStream.CopyTo(sourceStream);
+                    sourceStream.Position = 0;
+
+                    Tuple<string, IndexingResult> r = await _indexer.IndexAsync(sourceStream); // uploadStream);
+                    var result = r.Item2;
+                    var version = r.Item1;
 
                     switch (result)
                     {
@@ -57,7 +67,28 @@ namespace BaGet.Controllers
                             break;
 
                         case IndexingResult.PackageAlreadyExists:
-                            HttpContext.Response.StatusCode = 409;
+
+                            Console.WriteLine($"Delete {package.Name} v{version}");
+                            await Delete(package.Name, version);
+                            // retry:
+                            Console.WriteLine($"Put Retry  {package.Name} v{version}");
+
+                            sourceStream.Dispose();
+                            sourceStream = null;
+                            using (var sourceStream2 = new MemoryStream())
+                            using (var uploadStream2 = package.OpenReadStream())
+                            {
+                                uploadStream2.CopyTo(sourceStream2);
+                                sourceStream2.Position = 0;
+                                Tuple<string, IndexingResult> r2 =
+                                      await (_indexer as IndexingService).IndexAsync(sourceStream2, true);
+
+                                if (r2.Item2 == IndexingResult.PackageAlreadyExists) {
+                                   HttpContext.Response.StatusCode = 409;
+                                } else if(r2.Item2 == IndexingResult.Success) {
+                                   HttpContext.Response.StatusCode = 201;
+                                }
+                            }
                             break;
 
                         case IndexingResult.Success:
@@ -71,6 +102,11 @@ namespace BaGet.Controllers
                 _logger.LogError(e, "Exception thrown during package upload");
 
                 HttpContext.Response.StatusCode = 500;
+            }
+            finally {
+                sourceStream?.Dispose();
+                uploadStream?.Dispose();
+                uploadStream = null;
             }
         }
 

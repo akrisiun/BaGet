@@ -21,10 +21,16 @@ namespace BaGet.Core.Services
         {
             try
             {
-                _context.Packages.Add(package);
-
-                await _context.SaveChangesAsync();
-
+                var query = _context.Packages.Where(p => p.Id == package.Id);
+                var oldPackage = query.FirstOrDefault();
+                if (oldPackage != null) {
+                    _context.Packages.Update(oldPackage);
+                    await _context.SaveChangesAsync();
+                } else {
+                    _context.Packages.Add(package);
+                    await _context.SaveChangesAsync();
+                }
+                
                 return PackageAddResult.Success;
             }
             catch (DbUpdateException e)

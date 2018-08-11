@@ -10,9 +10,9 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/src/BaGet/bin/Debug/netcoreapp2.0/BaGet.dll",
-            "args": [],
-            "cwd": "${workspaceFolder}",
+            "program": "${workspaceFolder}/src/BaGet/bin/Debug/netcoreapp2.1/BaGet.dll",
+            "args": [""],
+            "cwd": "${workspaceFolder}/src/BaGet/",
             "stopAtEntry": false,
             "internalConsoleOptions": "openOnSessionStart",
             "launchBrowser": {
@@ -30,11 +30,20 @@
                 }
             },
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Development",
+                "server.urls": "http://localhost:5001/"
             },
             "sourceFileMap": {
                 "/Views": "${workspaceFolder}/Views"
             }
+        },
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "pwsh file.ps1",
+            "script": "${file}",
+            "args": [],
+            "cwd": "${file}"
         },
         {
             "name": ".NET Core Attach",

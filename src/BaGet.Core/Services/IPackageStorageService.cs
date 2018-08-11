@@ -7,8 +7,8 @@ namespace BaGet.Core.Services
 {
     public interface IPackageStorageService
     {
-        // TODO: Add overwrite option?
         Task SavePackageStreamAsync(PackageArchiveReader package, Stream packageStream);
+        Task OverwritePackageStreamAsync(PackageArchiveReader package, Stream packageStream);
 
         Task<Stream> GetPackageStreamAsync(PackageIdentity package);
         Task<Stream> GetNuspecStreamAsync(PackageIdentity package);

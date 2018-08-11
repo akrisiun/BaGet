@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -12,6 +13,6 @@ namespace BaGet.Core.Services
 
     public interface IIndexingService
     {
-        Task<IndexingResult> IndexAsync(Stream stream);
+        Task<Tuple<string, IndexingResult>> IndexAsync(Stream stream);
     }
 }

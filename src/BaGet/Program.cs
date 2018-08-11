@@ -37,6 +37,10 @@ namespace BaGet
 
             app.OnExecute(() =>
             {
+                if (!string.IsNullOrEmpty(Startup.ServerUrls) && args.Length == 0) {
+                   args = new string[] { $"--server.urls={Startup.ServerUrls}"};
+                }
+
                 CreateWebHostBuilder(args).Build().Run();
             });
 

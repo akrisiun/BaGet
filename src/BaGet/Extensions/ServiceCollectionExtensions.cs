@@ -58,7 +58,7 @@ namespace BaGet.Extensions
                     .Value
                     .Database;
 
-                databaseOptions.EnsureValid();
+                databaseOptions = databaseOptions.EnsureValid();
 
                 switch (databaseOptions.Type)
                 {
@@ -79,6 +79,8 @@ namespace BaGet.Extensions
                 var databaseOptions = provider.GetRequiredService<IOptions<BaGetOptions>>()
                     .Value
                     .Database;
+                if (databaseOptions?.ConnectionString == null)
+                    databaseOptions = OptionsExtensions.EnsureValid(null as DatabaseOptions);
 
                 options.UseSqlite(databaseOptions.ConnectionString);
             });

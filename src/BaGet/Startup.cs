@@ -13,12 +13,20 @@ namespace BaGet
 {
     public class Startup
     {
+        static Startup() {
+            Args = Environment.GetCommandLineArgs();
+            ServerUrls = Environment.GetEnvironmentVariable("server.urls");
+            // "server.urls": "http://localhost:5000/"
+        }
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         public IConfiguration Configuration { get; }
+        // --server.urls=http://localhost:5000/
+        public static string[] Args {get; set;}
+        public static string ServerUrls {get; set;}
 
         public void ConfigureServices(IServiceCollection services)
         {
@@ -62,8 +70,15 @@ namespace BaGet
                     .MapPackageContentRoutes();
             });
 
-            Console.WriteLine("http://localhost:8050/v3/index.json");
-            Console.WriteLine("BaGet index here");
+            // --server.urls=http://localhost:5001/
+            if (string.IsNullOrWhiteSpace(ServerUrls)) {
+                ServerUrls = "http://localhost:8050/";
+            }
+
+            Console.WriteLine($"{ServerUrls}v3/index.json");
+            if ((Args?.Length ?? 0) > 0)
+                Console.WriteLine($"Args {String.Join(" ", Args)}");
+            Console.WriteLine($"BaGet {env.EnvironmentName} / {env.ToString()} : index here");
         }
     }
 }

@@ -62,7 +62,8 @@ namespace BaGet.Core.Mirror
                         idString,
                         versionString);
 
-                    var indexingResult = await _indexer.IndexAsync(stream);
+                    Tuple<string, IndexingResult> r = await _indexer.IndexAsync(stream);
+                    var indexingResult = r.Item2;
 
                     switch (indexingResult)
                     {

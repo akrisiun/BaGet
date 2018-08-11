@@ -31,11 +31,18 @@ namespace BaGet.Core.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<IndexingResult> IndexAsync(Stream stream)
+        public static Tuple<string, IndexingResult> TupleV(string v, IndexingResult r)
+               => new Tuple<string, IndexingResult>(v, r);
+ 
+        public async Task<Tuple<string, IndexingResult>> IndexAsync(Stream stream) {
+            return await IndexAsync(stream, false);
+        }
+        public async Task<Tuple<string, IndexingResult>> IndexAsync(Stream stream, bool replace = false)
         {
             // Try to save the package stream to storage.
             // TODO: On exception, roll back storage save.
             Package package;
+            string v = "";
 
             try
             {
@@ -43,10 +50,16 @@ namespace BaGet.Core.Services
                 {
                     var packageId = packageReader.NuspecReader.GetId();
                     var packageVersion = packageReader.NuspecReader.GetVersion();
+                    v = packageVersion.ToNormalizedString();
 
                     if (await _packages.ExistsAsync(packageId, packageVersion))
                     {
-                        return IndexingResult.PackageAlreadyExists;
+                        if (replace) {
+                            await _packages.RelistPackageAsync(packageId, packageVersion);
+                        }
+                        else {
+                            return TupleV(v, IndexingResult.PackageAlreadyExists);
+                        }
                     }
 
                     try
@@ -56,13 +69,18 @@ namespace BaGet.Core.Services
                             packageId,
                             packageVersion.ToNormalizedString());
 
-                        await _storage.SavePackageStreamAsync(packageReader, stream);
+                        if (replace) {
+                            await _storage.OverwritePackageStreamAsync(packageReader, stream);
+                        } else {
+                            await _storage.SavePackageStreamAsync(packageReader, stream);
+                        }
                     }
                     catch (Exception e)
                     {
                         // This may happen due to concurrent pushes.
                         // TODO: Make IStorageService.SaveAsync return a result enum so this can be properly handled.
-                        _logger.LogError(e, "Failed to save package {Id} {Version}", packageId, packageVersion.ToNormalizedString());
+                        _logger.LogError(e, "Failed to save package {Id} {Version}", 
+                           packageId, packageVersion.ToNormalizedString());
 
                         throw;
                     }
@@ -87,7 +105,7 @@ namespace BaGet.Core.Services
             {
                 _logger.LogError(e, "Uploaded package is invalid or the package already existed in storage");
 
-                return IndexingResult.InvalidPackage;
+                return TupleV("", IndexingResult.InvalidPackage);
             }
 
             // The package stream has been stored. Persist the package's metadata to the database.
@@ -113,7 +131,9 @@ namespace BaGet.Core.Services
                         package.Id,
                         package.VersionString);
 
-                    return IndexingResult.Success;
+                    v = package.VersionString;
+
+                    return TupleV(v, IndexingResult.Success);
 
                 case PackageAddResult.PackageAlreadyExists:
                     _logger.LogWarning(
@@ -121,7 +141,9 @@ namespace BaGet.Core.Services
                         package.Id,
                         package.VersionString);
 
-                    return IndexingResult.PackageAlreadyExists;
+                    v = package.VersionString;
+
+                    return TupleV(v, IndexingResult.PackageAlreadyExists);
 
                 default:
                     _logger.LogError($"Unknown {nameof(PackageAddResult)} value: {{PackageAddResult}}", result);

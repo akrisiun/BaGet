@@ -1,14 +1,25 @@
 ﻿using System;
 using System.IO;
+using System.Diagnostics;
 using BaGet.Core.Configuration;
 
 namespace BaGet.Core.Extensions
 {
     public static class OptionsExtensions
     {
-        public static void EnsureValid(this DatabaseOptions options)
+        public static DatabaseOptions EnsureValid(this DatabaseOptions options)
         {
-            if (options == null) ThrowMissingConfiguration(nameof(BaGetOptions.Database));
+            if (options == null) 
+            {
+                if (Debugger.IsAttached) {
+                    options = new DatabaseOptions { 
+                        Type = DatabaseType.Sqlite,
+                        ConnectionString = "Data Source=baget.db"
+                    };
+                } else {
+                    ThrowMissingConfiguration(nameof(BaGetOptions.Database));
+                }
+            }
 
             if (string.IsNullOrEmpty(options.ConnectionString))
             {
@@ -16,6 +27,8 @@ namespace BaGet.Core.Extensions
                     nameof(BaGetOptions.Database),
                     nameof(DatabaseOptions.ConnectionString));
             }
+            
+            return options;
         }
 
         public static void EnsureValid(this StorageOptions options)

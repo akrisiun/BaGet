@@ -18,11 +18,15 @@ namespace BaGet.Core.Services
 
         public Task IndexAsync(Package package) => Task.CompletedTask;
 
-        public async Task<IReadOnlyList<SearchResult>> SearchAsync(string query, int skip = 0, int take = 20)
+        public async Task<IReadOnlyList<SearchResult>> SearchAsync(string query, int skip = 0, int take = 50)
         {
             IQueryable<Package> search = _context.Packages;
 
-            if (!string.IsNullOrEmpty(query))
+            if ("*".Equals(query))
+            {
+                search = search.Where(p => p.Listed);
+            }
+            else if (!string.IsNullOrEmpty(query))
             {
                 query = query.ToLower();
                 search = search.Where(p => p.Id.ToLower().Contains(query));

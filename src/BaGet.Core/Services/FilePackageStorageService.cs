@@ -16,6 +16,17 @@ namespace BaGet.Core.Services
             _storePath = storePath ?? throw new ArgumentNullException(nameof(storePath));
         }
 
+        public async Task OverwritePackageStreamAsync(PackageArchiveReader package, Stream packageStream)
+        {
+            var identity = package.GetIdentity();
+            var packagePath = Path.Combine(_storePath, identity.PackagePath());
+            if (File.Exists(packagePath))
+            {
+                File.Delete(packagePath);
+            }
+            await SavePackageStreamAsync(package, packageStream);
+        }
+
         public async Task SavePackageStreamAsync(PackageArchiveReader package, Stream packageStream)
         {
             var identity = package.GetIdentity();
@@ -34,13 +45,13 @@ namespace BaGet.Core.Services
             }
 
             using (var nuspec = package.GetNuspec())
-            using (var fileStream = File.Open(nuspecPath, FileMode.CreateNew))
+            using (var fileStream = File.Open(nuspecPath, FileMode.OpenOrCreate))
             {
                 await nuspec.CopyToAsync(fileStream);
             }
 
             using (var readme = package.GetReadme())
-            using (var fileStream = File.Open(readmePath, FileMode.CreateNew))
+            using (var fileStream = File.Open(readmePath, FileMode.OpenOrCreate))
             {
                 await readme.CopyToAsync(fileStream);
             }

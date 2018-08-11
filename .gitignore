@@ -142,3 +142,5 @@ UpgradeLog*.htm
 # Uncomment if you have tasks that create the project's static files in wwwroot
 #wwwroot/
 .cache/
+src/BaGet/baget.db
+baget-data/baget.db
