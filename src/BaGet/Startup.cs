@@ -15,7 +15,7 @@ namespace BaGet
     {
         static Startup() {
             Args = Environment.GetCommandLineArgs();
-            ServerUrls = Environment.GetEnvironmentVariable("server.urls");
+            ServerUrls = Environment.GetEnvironmentVariable("server_urls");
             // "server.urls": "http://localhost:5000/"
         }
         public Startup(IConfiguration configuration)
