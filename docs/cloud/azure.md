@@ -8,7 +8,4 @@ Use Azure to scale BaGet to nuget.org scale.
 TODO:
 
 * App Service
-* Azure SQL Database
-* Azure Blob Storage
-* Azure Search
 * High availibility setup

@@ -61,6 +61,9 @@ namespace BaGet
                     .MapRegistrationRoutes()
                     .MapPackageContentRoutes();
             });
+
+            Console.WriteLine("http://localhost:8050/v3/index.json");
+            Console.WriteLine("BaGet index here");
         }
     }
 }

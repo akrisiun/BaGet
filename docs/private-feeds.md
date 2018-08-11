@@ -8,10 +8,6 @@
 
 A private feed requires users to authenticate before accessing packages. BaGet supports the following authentication providers:
 
-* [Azure Active Directory](#azure-active-directory)
-
-## Azure Active Directory
-
 ### Setup
 
 * Build Azure Active Directory apps

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using BaGet.Azure.Configuration;
-using BaGet.Azure.Extensions;
-using BaGet.Azure.Search;
+// using BaGet.Azure.Configuration;
 using BaGet.Configurations;
 using BaGet.Core.Configuration;
 using BaGet.Core.Entities;
@@ -32,7 +30,7 @@ namespace BaGet.Extensions
             services.Configure<BaGetOptions>(configuration);
 
             services.AddBaGetContext();
-            services.ConfigureAzure(configuration);
+            // services.ConfigureAzure(configuration);
 
             if (httpServices)
             {
@@ -135,8 +133,8 @@ namespace BaGet.Extensions
                     case StorageType.FileSystem:
                         return provider.GetRequiredService<FilePackageStorageService>();
 
-                    case StorageType.AzureBlobStorage:
-                        return provider.GetRequiredService<BlobPackageStorageService>();
+                    //  case StorageType.AzureBlobStorage:
+                    //    return provider.GetRequiredService<BlobPackageStorageService>();
 
                     default:
                         throw new InvalidOperationException(
@@ -155,7 +153,7 @@ namespace BaGet.Extensions
                 return new FilePackageStorageService(options.Path);
             });
 
-            services.AddBlobPackageStorageService();
+            // services.AddBlobPackageStorageService();
 
             return services;
         }
@@ -176,8 +174,8 @@ namespace BaGet.Extensions
                     case SearchType.Database:
                         return provider.GetRequiredService<DatabaseSearchService>();
 
-                    case SearchType.Azure:
-                        return provider.GetRequiredService<AzureSearchService>();
+                    // case SearchType.Azure:
+                    //     return provider.GetRequiredService<AzureSearchService>();
 
                     default:
                         throw new InvalidOperationException(
@@ -186,7 +184,7 @@ namespace BaGet.Extensions
             });
 
             services.AddTransient<DatabaseSearchService>();
-            services.AddAzureSearch();
+            // services.AddAzureSearch();
 
             return services;
         }

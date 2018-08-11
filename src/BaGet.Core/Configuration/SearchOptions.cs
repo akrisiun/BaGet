@@ -7,7 +7,6 @@
 
     public enum SearchType
     {
-        Database = 0,
-        Azure = 1,
+        Database = 0
     }
 }

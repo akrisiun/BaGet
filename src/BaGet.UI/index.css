@@ -9,3 +9,11 @@ body {
   max-width: 100%;
   height: auto;
 }
+
+.font90 {
+  font-weight: 90%;
+}
+
+.w40 {
+  width: 40%;
+}

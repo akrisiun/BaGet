@@ -46,7 +46,15 @@ export default class App extends React.Component<{}, AppState> {
           <div className="row">
             <div className="col-sm-12">
               <div id="logo">
-                <h1><a href="/">BaGet</a></h1>
+                  <h1>
+                    <span className="w40">
+                      <a href="/">BaGet</a>
+                    </span>
+                    <span className="font90">
+                      &nbsp;| 
+                      index: <a href="/v3/index.json">/v3/index.json</a>
+                    </span>
+                  </h1>
               </div>
             </div>
           </div>

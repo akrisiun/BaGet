@@ -11,7 +11,8 @@
     "repository": "github:loic-sharma/BaGet",
     "scripts": {
         "develop": "parcel ./index.html",
-        "build": "parcel build ./index.html --out-dir ../BaGet/wwwroot"
+        "build": "parcel build ./index.html --out-dir ../BaGet/wwwroot",
+        "build-app": "parcel build ./index.html --out-dir ../../app/wwwroot"
     },
     "dependencies": {
         "bootstrap": "3.3.7",
@@ -25,6 +26,7 @@
         "@types/commonmark": "^0.27.0",
         "@types/react": "^16.1.0",
         "@types/react-dom": "^16.0.4",
+        "parcel": "^1.9.7",
         "parcel-bundler": "^1.7.0",
         "parcel-plugin-typescript": "^0.7.0",
         "prettier": "^1.11.1",
