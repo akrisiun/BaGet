@@ -29,6 +29,10 @@ namespace BaGet.Core.Mirror
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        public Task MirrorAsync(string id, NuGetVersion version, CancellationToken cancellationToken)
+        {
+            return MirrorAsync(id, version);
+        }
         public async Task MirrorAsync(string id, NuGetVersion version)
         {
             if (await _localPackages.ExistsAsync(id, version))
@@ -55,7 +59,8 @@ namespace BaGet.Core.Mirror
                 var packageUri = new Uri(_packageBaseAddress, $"{idString}/{versionString}/{idString}.{versionString}.nupkg");
 
                 // TODO: DownloadAsync throws when the package doesn't exist. This could be cleaner.
-                using (var stream = await _downloader.DownloadAsync(packageUri, CancellationToken.None))
+                // DownloadAsync
+                using (var stream = await _downloader.DownloadOrNullAsync(packageUri, CancellationToken.None))
                 {
                     _logger.LogInformation(
                         "Downloaded package {Id} {Version}, indexing...",

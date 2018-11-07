@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Core.Extensions;
 using NuGet.Packaging;
@@ -50,7 +51,8 @@ namespace BaGet.Core.Services
                 await nuspec.CopyToAsync(fileStream);
             }
 
-            using (var readme = package.GetReadme())
+            // GetReadme
+            using (Stream readme = await package.GetReadmeAsync(CancellationToken.None))
             using (var fileStream = File.Open(readmePath, FileMode.OpenOrCreate))
             {
                 await readme.CopyToAsync(fileStream);

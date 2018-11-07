@@ -49,7 +49,13 @@ namespace BaGet
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>();
+                .UseStartup<Startup>()
+                .UseKestrel(options =>
+                {
+                    // Remove the upload limit from Kestrel. If needed, an upload limit can
+                    // be enforced by a reverse proxy server, like IIS.
+                    options.Limits.MaxRequestBodySize = null;
+                });
 
         public static IHostBuilder CreateHostBuilder(string[] args)
         {
