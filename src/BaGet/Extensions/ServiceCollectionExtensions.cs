@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-// using BaGet.Azure.Configuration;
+using System.Reflection;
+using BaGet.Azure.Configuration;
+using BaGet.Azure.Extensions;
+using BaGet.Azure.Search;
 using BaGet.Configurations;
 using BaGet.Core.Configuration;
 using BaGet.Core.Entities;
@@ -30,7 +33,7 @@ namespace BaGet.Extensions
             services.Configure<BaGetOptions>(configuration);
 
             services.AddBaGetContext();
-            // services.ConfigureAzure(configuration);
+            services.ConfigureAzure(configuration);
 
             if (httpServices)
             {
@@ -39,6 +42,7 @@ namespace BaGet.Extensions
 
             services.AddTransient<IPackageService, PackageService>();
             services.AddTransient<IIndexingService, IndexingService>();
+            services.AddTransient<IPackageDeletionService, PackageDeletionService>();
             services.AddMirrorServices();
 
             services.ConfigureStorageProviders(configuration);
@@ -58,7 +62,7 @@ namespace BaGet.Extensions
                     .Value
                     .Database;
 
-                databaseOptions = databaseOptions.EnsureValid();
+                databaseOptions.EnsureValid();
 
                 switch (databaseOptions.Type)
                 {
@@ -79,8 +83,6 @@ namespace BaGet.Extensions
                 var databaseOptions = provider.GetRequiredService<IOptions<BaGetOptions>>()
                     .Value
                     .Database;
-                if (databaseOptions?.ConnectionString == null)
-                    databaseOptions = OptionsExtensions.EnsureValid(null as DatabaseOptions);
 
                 options.UseSqlite(databaseOptions.ConnectionString);
             });
@@ -135,8 +137,8 @@ namespace BaGet.Extensions
                     case StorageType.FileSystem:
                         return provider.GetRequiredService<FilePackageStorageService>();
 
-                    //  case StorageType.AzureBlobStorage:
-                    //    return provider.GetRequiredService<BlobPackageStorageService>();
+                    case StorageType.AzureBlobStorage:
+                        return provider.GetRequiredService<BlobPackageStorageService>();
 
                     default:
                         throw new InvalidOperationException(
@@ -155,7 +157,7 @@ namespace BaGet.Extensions
                 return new FilePackageStorageService(options.Path);
             });
 
-            // services.AddBlobPackageStorageService();
+            services.AddBlobPackageStorageService();
 
             return services;
         }
@@ -176,8 +178,8 @@ namespace BaGet.Extensions
                     case SearchType.Database:
                         return provider.GetRequiredService<DatabaseSearchService>();
 
-                    // case SearchType.Azure:
-                    //     return provider.GetRequiredService<AzureSearchService>();
+                    case SearchType.Azure:
+                        return provider.GetRequiredService<AzureSearchService>();
 
                     default:
                         throw new InvalidOperationException(
@@ -186,7 +188,7 @@ namespace BaGet.Extensions
             });
 
             services.AddTransient<DatabaseSearchService>();
-            // services.AddAzureSearch();
+            services.AddAzureSearch();
 
             return services;
         }
@@ -225,11 +227,16 @@ namespace BaGet.Extensions
             {
                 var options = provider.GetRequiredService<IOptions<BaGetOptions>>().Value;
 
+                var assembly = Assembly.GetEntryAssembly();
+                var assemblyName = assembly.GetName().Name;
+                var assemblyVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
                 var client = new HttpClient(new HttpClientHandler
                 {
                     AutomaticDecompression = (DecompressionMethods.GZip | DecompressionMethods.Deflate),
                 });
 
+                client.DefaultRequestHeaders.Add("User-Agent", $"{assemblyName}/{assemblyVersion}");
                 client.Timeout = TimeSpan.FromSeconds(options.Mirror.PackageDownloadTimeoutSeconds);
 
                 return client;
