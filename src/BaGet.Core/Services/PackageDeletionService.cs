@@ -81,7 +81,7 @@ namespace BaGet.Core.Services
                 version);
 
             PackageIdentity package = new PackageIdentity(id, version);
-            await _storage.DeleteAsync(package); // id, version);
+            await _storage.DeleteAsync(id, version);
 
             _logger.LogInformation(
                 "Hard deleted package {PackageId} {PackageVersion} from storage",

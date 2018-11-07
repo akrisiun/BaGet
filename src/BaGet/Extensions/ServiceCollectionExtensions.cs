@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Reflection;
 // using BaGet.Azure.Configuration;
+// using BaGet.Azure.Extensions;
+// using BaGet.Azure.Search;
 using BaGet.Configurations;
 using BaGet.Core.Configuration;
 using BaGet.Core.Entities;
@@ -39,6 +42,7 @@ namespace BaGet.Extensions
 
             services.AddTransient<IPackageService, PackageService>();
             services.AddTransient<IIndexingService, IndexingService>();
+            services.AddTransient<IPackageDeletionService, PackageDeletionService>();
             services.AddMirrorServices();
 
             services.ConfigureStorageProviders(configuration);
@@ -58,7 +62,8 @@ namespace BaGet.Extensions
                     .Value
                     .Database;
 
-                databaseOptions = databaseOptions.EnsureValid();
+                databaseOptions.EnsureValid();
+                // databaseOptions = databaseOptions.EnsureValid();
 
                 switch (databaseOptions.Type)
                 {
@@ -225,11 +230,16 @@ namespace BaGet.Extensions
             {
                 var options = provider.GetRequiredService<IOptions<BaGetOptions>>().Value;
 
+                var assembly = Assembly.GetEntryAssembly();
+                var assemblyName = assembly.GetName().Name;
+                var assemblyVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
                 var client = new HttpClient(new HttpClientHandler
                 {
                     AutomaticDecompression = (DecompressionMethods.GZip | DecompressionMethods.Deflate),
                 });
 
+                client.DefaultRequestHeaders.Add("User-Agent", $"{assemblyName}/{assemblyVersion}");
                 client.Timeout = TimeSpan.FromSeconds(options.Mirror.PackageDownloadTimeoutSeconds);
 
                 return client;

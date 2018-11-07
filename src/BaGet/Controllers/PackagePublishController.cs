@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
+using BaGet.Core.Extensions;
 using BaGet.Core.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,49 +18,43 @@ namespace BaGet.Controllers
         private readonly IAuthenticationService _authentication;
         private readonly IIndexingService _indexer;
         private readonly IPackageService _packages;
+        private readonly IPackageDeletionService _deleteService;
         private readonly ILogger<PackagePublishController> _logger;
 
         public PackagePublishController(
             IAuthenticationService authentication,
             IIndexingService indexer,
             IPackageService packages,
+            IPackageDeletionService deletionService,
             ILogger<PackagePublishController> logger)
         {
             _authentication = authentication ?? throw new ArgumentNullException(nameof(authentication));
             _indexer = indexer ?? throw new ArgumentNullException(nameof(indexer));
             _packages = packages ?? throw new ArgumentNullException(nameof(packages));
+            _deleteService = deletionService ?? throw new ArgumentNullException(nameof(deletionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         // See: https://docs.microsoft.com/en-us/nuget/api/package-publish-resource#push-a-package
-        public async Task Upload(IFormFile package)
+        public async Task Upload(CancellationToken cancellationToken)
         {
-            if (package == null)
-            {
-                HttpContext.Response.StatusCode = 400;
-                return;
-            }
-
             if (!await _authentication.AuthenticateAsync(ApiKey))
             {
                 HttpContext.Response.StatusCode = 401;
                 return;
             }
 
-            Stream uploadStream = null;
-            MemoryStream sourceStream = null;
             try
             {
-                sourceStream = new MemoryStream();
+                using (var uploadStream = await GetPackageUploadStreamOrNullAsync(cancellationToken))
                 {
-                    // await dataSource.LoadIntoStream(sourceStream);
-                    uploadStream = package.OpenReadStream();
-                    uploadStream.CopyTo(sourceStream);
-                    sourceStream.Position = 0;
+                    if (uploadStream == null)
+                    {
+                        HttpContext.Response.StatusCode = 400;
+                        return;
+                    }
 
-                    Tuple<string, IndexingResult> r = await _indexer.IndexAsync(sourceStream); // uploadStream);
-                    var result = r.Item2;
-                    var version = r.Item1;
+                    var result = await _indexer.IndexAsync(uploadStream, cancellationToken);
 
                     switch (result)
                     {
@@ -67,28 +63,7 @@ namespace BaGet.Controllers
                             break;
 
                         case IndexingResult.PackageAlreadyExists:
-
-                            Console.WriteLine($"Delete {package.Name} v{version}");
-                            await Delete(package.Name, version);
-                            // retry:
-                            Console.WriteLine($"Put Retry  {package.Name} v{version}");
-
-                            sourceStream.Dispose();
-                            sourceStream = null;
-                            using (var sourceStream2 = new MemoryStream())
-                            using (var uploadStream2 = package.OpenReadStream())
-                            {
-                                uploadStream2.CopyTo(sourceStream2);
-                                sourceStream2.Position = 0;
-                                Tuple<string, IndexingResult> r2 =
-                                      await (_indexer as IndexingService).IndexAsync(sourceStream2, true);
-
-                                if (r2.Item2 == IndexingResult.PackageAlreadyExists) {
-                                   HttpContext.Response.StatusCode = 409;
-                                } else if(r2.Item2 == IndexingResult.Success) {
-                                   HttpContext.Response.StatusCode = 201;
-                                }
-                            }
+                            HttpContext.Response.StatusCode = 409;
                             break;
 
                         case IndexingResult.Success:
@@ -103,10 +78,31 @@ namespace BaGet.Controllers
 
                 HttpContext.Response.StatusCode = 500;
             }
-            finally {
-                sourceStream?.Dispose();
-                uploadStream?.Dispose();
-                uploadStream = null;
+        }
+
+        private async Task<Stream> GetPackageUploadStreamOrNullAsync(CancellationToken cancellationToken)
+        {
+            // Try to get the nupkg from the multipart/form-data. If that's empty,
+            // fallback to the request's body.
+            Stream rawUploadStream = null;
+            try
+            {
+                if (Request.HasFormContentType && Request.Form.Files.Count > 0)
+                {
+                    rawUploadStream = Request.Form.Files[0].OpenReadStream();
+                }
+                else
+                {
+                    rawUploadStream = Request.Body;
+                }
+
+                // Convert the upload stream into a temporary file stream to
+                // minimize memory usage.
+                return await rawUploadStream?.AsTemporaryFileStreamAsync(cancellationToken);
+            }
+            finally
+            {
+                rawUploadStream?.Dispose();
             }
         }
 
@@ -122,7 +118,7 @@ namespace BaGet.Controllers
                 return Unauthorized();
             }
 
-            if (await _packages.UnlistPackageAsync(id, nugetVersion))
+            if (await _deleteService.TryDeletePackageAsync(id, nugetVersion))
             {
                 return NoContent();
             }

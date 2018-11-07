@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using BaGet.Core.Entities;
 using BaGet.Core.Extensions;
@@ -31,125 +32,112 @@ namespace BaGet.Core.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public static Tuple<string, IndexingResult> TupleV(string v, IndexingResult r)
-               => new Tuple<string, IndexingResult>(v, r);
- 
-        public async Task<Tuple<string, IndexingResult>> IndexAsync(Stream stream) {
-            return await IndexAsync(stream, false);
-        }
-        public async Task<Tuple<string, IndexingResult>> IndexAsync(Stream stream, bool replace = false)
+        public async Task<IndexingResult> IndexAsync(Stream packageStream, CancellationToken cancellationToken)
         {
-            // Try to save the package stream to storage.
-            // TODO: On exception, roll back storage save.
+            // Try to extract all the necessary information from the package.
             Package package;
-            string v = "";
+            Stream nuspecStream;
+            Stream readmeStream;
 
             try
             {
-                using (var packageReader = new PackageArchiveReader(stream))
+                using (var packageReader = new PackageArchiveReader(packageStream, leaveStreamOpen: true))
                 {
-                    var packageId = packageReader.NuspecReader.GetId();
-                    var packageVersion = packageReader.NuspecReader.GetVersion();
-                    v = packageVersion.ToNormalizedString();
+                    package = GetPackageMetadata(packageReader);
+                    nuspecStream = await packageReader.GetNuspecAsync(cancellationToken);
 
-                    if (await _packages.ExistsAsync(packageId, packageVersion))
+                    if (package.HasReadme)
                     {
-                        if (replace) {
-                            await _packages.RelistPackageAsync(packageId, packageVersion);
-                        }
-                        else {
-                            return TupleV(v, IndexingResult.PackageAlreadyExists);
-                        }
+                        readmeStream = await packageReader.GetReadmeAsync(cancellationToken);
                     }
-
-                    try
+                    else
                     {
-                        _logger.LogInformation(
-                            "Persisting package {Id} {Version} content to storage...",
-                            packageId,
-                            packageVersion.ToNormalizedString());
-
-                        if (replace) {
-                            await _storage.OverwritePackageStreamAsync(packageReader, stream);
-                        } else {
-                            await _storage.SavePackageStreamAsync(packageReader, stream);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        // This may happen due to concurrent pushes.
-                        // TODO: Make IStorageService.SaveAsync return a result enum so this can be properly handled.
-                        _logger.LogError(e, "Failed to save package {Id} {Version}", 
-                           packageId, packageVersion.ToNormalizedString());
-
-                        throw;
-                    }
-
-                    try
-                    {
-                        package = GetPackageMetadata(packageReader);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(
-                            e,
-                            "Failed to extract metadata for package {Id} {Version}",
-                            packageId,
-                            packageVersion.ToNormalizedString());
-
-                        throw;
+                        readmeStream = null;
                     }
                 }
             }
             catch (Exception e)
             {
-                _logger.LogError(e, "Uploaded package is invalid or the package already existed in storage");
+                _logger.LogError(e, "Uploaded package is invalid");
 
-                return TupleV("", IndexingResult.InvalidPackage);
+                return IndexingResult.InvalidPackage;
             }
 
-            // The package stream has been stored. Persist the package's metadata to the database.
+            // The package is well-formed. Ensure this is a new package.
+            if (await _packages.ExistsAsync(package.Id, package.Version))
+            {
+                return IndexingResult.PackageAlreadyExists;
+            }
+
+            // TODO: Add more package validations
             _logger.LogInformation(
-                "Persisting package {Id} {Version} metadata to database...",
+                "Validated package {PackageId} {PackageVersion}, persisting content to storage...",
+                package.Id,
+                package.VersionString);
+
+            try
+            {
+                packageStream.Position = 0;
+                PackageArchiveReader reader = new PackageArchiveReader(packageStream);
+
+                await _storage.SavePackageStreamAsync(
+                            // SavePackageContentAsync(
+                    reader, // package,
+                    packageStream);
+                    //nuspecStream,
+                    //readmeStream,
+                    //cancellationToken);
+            }
+            catch (Exception e)
+            {
+                // This may happen due to concurrent pushes.
+                // TODO: Make IPackageStorageService.SavePackageContentAsync return a result enum so this
+                // can be properly handled.
+                _logger.LogError(
+                    e,
+                    "Failed to persist package {PackageId} {PackageVersion} content to storage",
+                    package.Id,
+                    package.VersionString);
+
+                throw;
+            }
+
+            _logger.LogInformation(
+                "Persisted package {Id} {Version} content to storage, saving metadata to database...",
                 package.Id,
                 package.VersionString);
 
             var result = await _packages.AddAsync(package);
-
-            switch (result)
+            if (result == PackageAddResult.PackageAlreadyExists)
             {
-                case PackageAddResult.Success:
-                    _logger.LogInformation(
-                        "Successfully persisted package {Id} {Version} metadata to database. Indexing in search...",
-                        package.Id,
-                        package.VersionString);
+                _logger.LogWarning(
+                    "Package {Id} {Version} metadata already exists in database",
+                    package.Id,
+                    package.VersionString);
 
-                    await _search.IndexAsync(package);
-
-                    _logger.LogInformation(
-                        "Successfully indexed package {Id} {Version} in search",
-                        package.Id,
-                        package.VersionString);
-
-                    v = package.VersionString;
-
-                    return TupleV(v, IndexingResult.Success);
-
-                case PackageAddResult.PackageAlreadyExists:
-                    _logger.LogWarning(
-                        "Package {Id} {Version} metadata already exists in database",
-                        package.Id,
-                        package.VersionString);
-
-                    v = package.VersionString;
-
-                    return TupleV(v, IndexingResult.PackageAlreadyExists);
-
-                default:
-                    _logger.LogError($"Unknown {nameof(PackageAddResult)} value: {{PackageAddResult}}", result);
-
-                    throw new InvalidOperationException($"Unknown {nameof(PackageAddResult)} value: {result}");
+                return IndexingResult.PackageAlreadyExists;
             }
+
+            if (result != PackageAddResult.Success)
+            {
+                _logger.LogError($"Unknown {nameof(PackageAddResult)} value: {{PackageAddResult}}", result);
+
+                throw new InvalidOperationException($"Unknown {nameof(PackageAddResult)} value: {result}");
+            }
+
+            _logger.LogInformation(
+                "Successfully persisted package {Id} {Version} metadata to database. Indexing in search...",
+                package.Id,
+                package.VersionString);
+
+            await _search.IndexAsync(package);
+
+            _logger.LogInformation(
+                "Successfully indexed package {Id} {Version} in search",
+                package.Id,
+                package.VersionString);
+
+            return IndexingResult.Success;
         }
 
         private Package GetPackageMetadata(PackageArchiveReader packageReader)

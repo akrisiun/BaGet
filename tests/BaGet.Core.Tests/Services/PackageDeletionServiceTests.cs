@@ -84,7 +84,7 @@ namespace BaGet.Core.Tests.Services
                 .ReturnsAsync(packageExists);
 
             _storage
-                .Setup(s => s.DeleteAsync(new NuGet.Packaging.Core.PackageIdentity(PackageId, PackageVersion)))
+                .Setup(s => s.DeleteAsync(PackageId, PackageVersion))
                 .Callback(() => storageStep = step++)
                 .Returns(Task.CompletedTask);
 
@@ -102,7 +102,7 @@ namespace BaGet.Core.Tests.Services
                 p => p.HardDeletePackageAsync(PackageId, PackageVersion),
                 Times.Once);
             _storage.Verify(
-                s => s.DeleteAsync(new NuGet.Packaging.Core.PackageIdentity(PackageId, PackageVersion)),
+                s => s.DeleteAsync(PackageId, PackageVersion),
                 Times.Once);
 
             _packages.Verify(
