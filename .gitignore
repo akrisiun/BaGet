@@ -144,3 +144,5 @@ UpgradeLog*.htm
 .cache/
 src/BaGet/baget.db
 baget-data/baget.db
+*.db
+appsettings.json

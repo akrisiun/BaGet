@@ -3,6 +3,7 @@ using BaGet.Configurations;
 using BaGet.Core.Configuration;
 using BaGet.Core.Entities;
 using BaGet.Extensions;
+using BaGet.Web.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -45,6 +46,10 @@ namespace BaGet
             // Run migrations if necessary.
             if (Configuration.Get<BaGetOptions>().RunMigrationsAtStartup)
             {
+                var scopeFactory = app.ApplicationServices
+                    .GetRequiredService<IServiceScopeFactory>();
+
+                // using (var scope = scopeFactory.CreateScope())
                 using (var scope = app.ApplicationServices.CreateScope())
                 {
                     scope.ServiceProvider
