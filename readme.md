@@ -1,6 +1,36 @@
 # BaGet :baguette_bread:
 
-[![Build Status](https://sharml.visualstudio.com/BaGet/_apis/build/status/loic-sharma.BaGet)](https://sharml.visualstudio.com/BaGet/_build/latest?definitionId=2) [![Join the chat at https://gitter.im/BaGetServer/community](https://badges.gitter.im/BaGetServer/community.svg)](https://gitter.im/BaGetServer/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+custom build for docker :90 port
+```
+./dock-b.sh
+./dock-run.sh
+
+# OR
+docker run -d -p 5005:5000 --name baget5005 baget
+docker run -d -p 90:5000 --name baget90 baget
+```
+
+[http://localhost:5005](http://localhost:5005)
+
+## Nuget.config sample
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <config>
+    <add key="repositoryPath" value="~/.nuget/packages" />
+  </config>
+  <packageSources>
+    <clear />
+    <add key="dotnet-core" value="https://dotnetfeed.blob.core.windows.net/dotnet-core/index.json" />
+    <add key="NuGet-org" value="https://api.nuget.org/v3/index.json" />
+    <add key="local90"   value="http://localhost:90/nuget/nuget/" />
+    <!--
+    -->
+  </packageSources>
+```
+
+## Oficial info
 
 A lightweight [NuGet](https://docs.microsoft.com/en-us/nuget/what-is-nuget) and [Symbol](https://docs.microsoft.com/en-us/windows/desktop/debug/symbol-servers-and-symbol-stores) server.
 

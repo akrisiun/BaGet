@@ -16,4 +16,6 @@ RUN dotnet publish BaGet -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "BaGet.dll"]
+COPY run.sh /app
+
+ENTRYPOINT ["dotnet", "BaGet.dll", "--hosturl", "http://0.0.0.0:5000"]
