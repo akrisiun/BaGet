@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Product>BaGet</Product>
 
-    <PackageVersion Condition="'$(PackageVersion)' == ''">0.1.0-prerelease</PackageVersion>
+    <PackageVersion Condition="'$(PackageVersion)' == ''">0.1.0-beta</PackageVersion>
     <PackageProjectUrl>https://loic-sharma.github.io/BaGet/</PackageProjectUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageIconUrl>https://raw.githubusercontent.com/NuGet/Media/master/Images/MainLogo/256x256/nuget_256.png</PackageIconUrl>
@@ -33,7 +33,7 @@
     <NuGetPackageVersion>5.0.0-rtm.5856</NuGetPackageVersion>
   </PropertyGroup>
 
-  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net461' or '$(TargetFramework)' == 'net471' ">
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0-preview.2" />
   </ItemGroup>
 

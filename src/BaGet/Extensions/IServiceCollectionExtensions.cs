@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Reflection;
+#if AZURE // | AWS
 using BaGet.Aws;
 using BaGet.Aws.Configuration;
 using BaGet.Aws.Extensions;
@@ -9,16 +10,23 @@ using BaGet.Azure;
 using BaGet.Azure.Configuration;
 using BaGet.Azure.Extensions;
 using BaGet.Azure.Search;
+#endif
+#if AZURE || POSTGRES
+using BaGet.Database.PostgreSql;
+#endif
+// Google cloud
+#if GOOGLE
+using BaGet.Gcp.Extensions;
+using BaGet.Gcp.Services;
+using BaGet.Gcp.Configuration;
+#endif
+// Core
 using BaGet.Core;
 using BaGet.Core.Content;
 using BaGet.Core.Server.Extensions;
 using BaGet.Database.MySql;
-using BaGet.Database.PostgreSql;
 using BaGet.Database.Sqlite;
 using BaGet.Database.SqlServer;
-using BaGet.Gcp.Configuration;
-using BaGet.Gcp.Extensions;
-using BaGet.Gcp.Services;
 using BaGet.Protocol;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -40,12 +48,15 @@ namespace BaGet.Extensions
             services.ConfigureAndValidate<StorageOptions>(configuration.GetSection(nameof(BaGetOptions.Storage)));
             services.ConfigureAndValidate<DatabaseOptions>(configuration.GetSection(nameof(BaGetOptions.Database)));
             services.ConfigureAndValidate<FileSystemStorageOptions>(configuration.GetSection(nameof(BaGetOptions.Storage)));
+#if AZURE // || AWS
             services.ConfigureAndValidate<BlobStorageOptions>(configuration.GetSection(nameof(BaGetOptions.Storage)));
             services.ConfigureAndValidate<AzureSearchOptions>(configuration.GetSection(nameof(BaGetOptions.Search)));
-
             services.ConfigureAzure(configuration);
             services.ConfigureAws(configuration);
+#endif
+#if GOOGLE
             services.ConfigureGcp(configuration);
+#endif
 
             if (httpServices)
             {
@@ -68,8 +79,10 @@ namespace BaGet.Extensions
                     case DatabaseType.PostgreSql:
                         return new PackageService(provider.GetRequiredService<IContext>());
 
+#if AZURE
                     case DatabaseType.AzureTable:
                         return provider.GetRequiredService<TablePackageService>();
+#endif
 
                     default:
                         throw new InvalidOperationException(
@@ -112,9 +125,10 @@ namespace BaGet.Extensions
                     case DatabaseType.MySql:
                         return provider.GetRequiredService<MySqlContext>();
 
+#if AZURE || POSTGRES
                     case DatabaseType.PostgreSql:
                         return provider.GetRequiredService<PostgreSqlContext>();
-
+#endif
                     case DatabaseType.AzureTable:
                     default:
                         throw new InvalidOperationException(
@@ -143,12 +157,12 @@ namespace BaGet.Extensions
                 options.UseMySql(databaseOptions.Value.ConnectionString);
             });
 
-            services.AddDbContext<PostgreSqlContext>((provider, options) =>
-            {
-                var databaseOptions = provider.GetRequiredService<IOptionsSnapshot<DatabaseOptions>>();
+            //services.AddDbContext<PostgreSqlContext>((provider, options) =>
+            //{
+            //    var databaseOptions = provider.GetRequiredService<IOptionsSnapshot<DatabaseOptions>>();
 
-                options.UseNpgsql(databaseOptions.Value.ConnectionString);
-            });
+            //    options.UseNpgsql(databaseOptions.Value.ConnectionString);
+            //});
 
             return services;
         }
@@ -157,12 +171,14 @@ namespace BaGet.Extensions
             this IServiceCollection services,
             IConfiguration configuration)
         {
+#if AZURE // || AWS
             services.ConfigureAndValidate<BlobStorageOptions>(configuration.GetSection(nameof(BaGetOptions.Storage)));
             services.ConfigureAndValidate<AzureSearchOptions>(configuration.GetSection(nameof(BaGetOptions.Search)));
-
+#endif
             return services;
         }
 
+#if AZURE || AWS
         public static IServiceCollection ConfigureAws(
             this IServiceCollection services,
             IConfiguration configuration)
@@ -171,7 +187,9 @@ namespace BaGet.Extensions
 
             return services;
         }
+#endif
 
+#if GOOGLE
         public static IServiceCollection ConfigureGcp(
             this IServiceCollection services,
             IConfiguration configuration)
@@ -180,6 +198,7 @@ namespace BaGet.Extensions
 
             return services;
         }
+#endif
 
         public static IServiceCollection AddStorageProviders(this IServiceCollection services)
         {
@@ -188,10 +207,12 @@ namespace BaGet.Extensions
             services.AddTransient<IPackageStorageService, PackageStorageService>();
             services.AddTransient<ISymbolStorageService, SymbolStorageService>();
 
+#if AZURE // | AWS
             services.AddTableStorageService();
             services.AddBlobStorageService();
             services.AddS3StorageService();
             services.AddGoogleCloudStorageService();
+#endif
 
             services.AddTransient<IStorageService>(provider =>
             {
@@ -202,6 +223,7 @@ namespace BaGet.Extensions
                     case StorageType.FileSystem:
                         return provider.GetRequiredService<FileStorageService>();
 
+#if AZURE // | AWS
                     case StorageType.AzureBlobStorage:
                         return provider.GetRequiredService<BlobStorageService>();
 
@@ -210,6 +232,7 @@ namespace BaGet.Extensions
 
                     case StorageType.GoogleCloud:
                         return provider.GetRequiredService<GoogleCloudStorageService>();
+#endif
 
                     case StorageType.Null:
                         return provider.GetRequiredService<NullStorageService>();
@@ -242,18 +265,20 @@ namespace BaGet.Extensions
                             case DatabaseType.SqlServer:
                                 return provider.GetRequiredService<DatabaseSearchService>();
 
+#if AZURE // | AWS
                             case DatabaseType.AzureTable:
                                 return provider.GetRequiredService<TableSearchService>();
-
+#endif
                             default:
                                 throw new InvalidOperationException(
                                     $"Database type '{databaseOptions.Value.Type}' cannot be used with " +
                                     $"search type '{searchOptions.Value.Type}'");
                         }
 
+#if AZURE // | AWS
                     case SearchType.Azure:
                         return provider.GetRequiredService<AzureSearchService>();
-
+#endif
                     case SearchType.Null:
                         return provider.GetRequiredService<NullSearchService>();
 
@@ -265,8 +290,11 @@ namespace BaGet.Extensions
 
             services.AddTransient<DatabaseSearchService>();
             services.AddSingleton<NullSearchService>();
+
+#if AZURE // | AWS
             services.AddAzureSearch();
             services.AddAzureTableSearch();
+#endif
 
             return services;
         }

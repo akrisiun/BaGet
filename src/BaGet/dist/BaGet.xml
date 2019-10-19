@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>BaGet</name>
+    </assembly>
+    <members>
+        <member name="M:BaGet.Extensions.IServiceCollectionExtensions.AddMirrorServices(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            Add the services that mirror an upstream package source.
+            </summary>
+            <param name="services">The defined services.</param>
+        </member>
+    </members>
+</doc>

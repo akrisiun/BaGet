@@ -276,3 +276,5 @@ __pycache__/
 
 # Ignore database file
 **/baget.db 
+yarn.lock
+src/BaGet/dist/wwwroot/
