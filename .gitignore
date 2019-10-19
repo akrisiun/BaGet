@@ -279,3 +279,5 @@ app/
 
 *.nupkg
 *.snupkg
+
+dist/
