@@ -35,7 +35,8 @@ docker run -d -p 5005:5000 --name baget5005 baget
     <!--
     -->
   </packageSources>
-</configuration>```
+</configuration>
+```
 
 ## Oficial info
 
