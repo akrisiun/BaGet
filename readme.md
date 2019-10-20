@@ -1,5 +1,10 @@
 # BaGet :baguette_bread:
 
+pwsh push package one line:
+```
+foreach ($f in (Get-ChildItem *.nupkg)) { dotnet nuget push -s http://localhost:90/v3/index.json $f -k $key; }
+```
+
 custom build for docker :90 port
 ```
 ./dock-b.sh
