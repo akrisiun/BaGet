@@ -2,10 +2,12 @@
 
 pwsh push package one line:
 ```
-foreach ($f in (Get-ChildItem *.nupkg)) { dotnet nuget push -s http://localhost:90/v3/index.json $f -k $key; }
+foreach ($f in (Get-ChildItem *.nupkg)) { dotnet nuget push -s http://localhost:90/v3/index.json $f; }
+# -k $key; }
 ```
 
-custom build for docker :90 port [http://localhost:90](http://localhost:90)```
+custom build for docker :90 port [http://localhost:90](http://localhost:90)  
+```
 ./dock-b.sh
 ./dock-run.sh
 
@@ -14,6 +16,7 @@ docker run -d -p 90:5000   --name baget90 -v ~/Packages:/app/packages baget
 # :5005
 docker run -d -p 5005:5000 --name baget5005 baget
 ```
+
 [http://localhost:5005](http://localhost:5005)
 
 ## Nuget.config sample
