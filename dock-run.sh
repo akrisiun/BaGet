@@ -8,7 +8,8 @@ docker rm -f baget90
 mkdir  ../Packages
 echo $(pwd)/../Packages
 
-docker run -d -p 90:5000 -v $(pwd)/../Packages:/app/Packagages --name baget90 baget
+docker run -d -p 90:5000 -v $(pwd)/../Packages:/app/packages --name baget90 baget
 
 docker ps | head -n 3
 docker logs baget90
+docker exec baget90 ls /app/packages

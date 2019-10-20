@@ -1,6 +1,10 @@
 # pwsh ./iis7k
 
-$p = "$PWD\dist"
+# IIS :5000  (or :7000)
+# netsh advfirewall firewall add rule name="Open Port 5000" dir=in action=allow protocol=TCP localport=5000
+# netsh advfirewall firewall add rule name="Open Port 7000" dir=in action=allow protocol=TCP localport=7000
+
+$p = "$PWD\app"
 
 start "http://localhost:7000/"
 
