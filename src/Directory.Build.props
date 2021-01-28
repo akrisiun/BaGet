@@ -37,6 +37,12 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.0-preview.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="[12.0.2,)" />
+    <!-- <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="1.0.0" />
+    <PackageReference Include="Nuget.Packaging" Version="[4.3.0,)" />
+    <PackageReference Include="Nuget.Protocol" Version="[4.3.0,)" /> -->
+  </ItemGroup>
   <ItemGroup Condition="$(DOTNET_RUNNING_IN_CONTAINER) == ''">
     <!-- <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All"/> -->
   </ItemGroup>
