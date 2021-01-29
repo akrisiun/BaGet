@@ -6,7 +6,7 @@
   "author": "Loic Sharma",
   "repository": "github:loic-sharma/BaGet",
   "private": true,
-  "homepage": "/v3",  
+  "homepage": "",  
   "dependencies": {
     "bootstrap": "3.3.7",
     "copy-text-to-clipboard": "^2.1.1",
