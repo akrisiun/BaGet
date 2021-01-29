@@ -1,0 +1,11 @@
+{
+  "name": "baget",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/akrisiun/baget",
+  "author": "Andrius-K <akrisiun@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "dotnet restore && dotnet msbuild"
+  }
+}

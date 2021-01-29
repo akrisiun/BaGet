@@ -42,8 +42,8 @@ class App extends React.Component<RouteComponentProps, IAppState> {
           <div className="row">
             <div id="navbar" className="col-sm-12">
               <ul className="nav navbar-nav" role="tablist">
-                <li role="presentation"><NavLink to="/" exact={true} role="tab"><span>Packages</span></NavLink></li>
-                <li role="presentation"><NavLink to="/upload"><span>Upload</span></NavLink></li>
+                <li role="presentation"><NavLink to="/v3/" exact={true} role="tab"><span>Packages</span></NavLink></li>
+                <li role="presentation"><NavLink to="/v3/upload"><span>Upload</span></NavLink></li>
                 <li role="presentation">
                   <a role="tab" href="https://loic-sharma.github.io/BaGet/" target="_blank" rel="noopener noreferrer">
                     <span>Documentation</span>
