@@ -5,7 +5,7 @@ using BaGet.Core.Server.Extensions;
 using BaGet.Extensions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
+using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer; // SpaServices.Extensions.dll
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,6 +33,7 @@ namespace BaGet
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+        // TODO IHostingEnvironment is obsolete
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
             if (env.IsDevelopment())
@@ -61,6 +62,16 @@ namespace BaGet
             app.UseCors(ConfigureCorsOptions.CorsPolicy);
             app.UseOperationCancelledMiddleware();
 
+            // TODO
+            /*
+            app.UseEndpoints(endpoints =>
+            {
+                endpoints.MapControllers();
+                endpoints.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+            });
+            */
             app.UseMvc(routes =>
             {
                 routes
@@ -71,6 +82,7 @@ namespace BaGet
                     .MapPackageMetadataRoutes()
                     .MapPackageContentRoutes();
             });
+            // , MvcOptions.EnabledEndpointRouting );
 
             app.UseSpa(spa =>
             {
